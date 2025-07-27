@@ -7,6 +7,9 @@ import {
   interval, 
   fromEvent,
   Subject,
+  BehaviorSubject,
+  ReplaySubject,
+  AsyncSubject,
   Subscription,
   EMPTY,
   throwError,
@@ -16,12 +19,15 @@ import {
   merge,
   concat,
   zip,
-  race
+  race,
+  range,
+  defer
 } from 'rxjs';
 import { 
   map, 
   filter, 
   take, 
+  skip,
   switchMap, 
   mergeMap, 
   concatMap, 
@@ -29,12 +35,24 @@ import {
   distinctUntilChanged, 
   catchError, 
   retry,
+  retryWhen,
   tap,
   scan,
   reduce,
   startWith,
   withLatestFrom,
-  delay
+  delay,
+  finalize,
+  share,
+  shareReplay,
+  multicast,
+  publish,
+  every,
+  find,
+  isEmpty,
+  pluck,
+  first,
+  last
 } from 'rxjs/operators';
 
 interface OperatorExample {
@@ -45,6 +63,13 @@ interface OperatorExample {
   subscription?: Subscription;
 }
 
+interface CategorySection {
+  name: string;
+  description: string;
+  examples: OperatorExample[];
+  isExpanded: boolean;
+}
+
 @Component({
   selector: 'app-rxjs-operators',
   imports: [CommonModule],
@@ -53,114 +78,291 @@ interface OperatorExample {
 })
 export class RxjsOperatorsComponent implements OnInit, OnDestroy {
   
-  examples: OperatorExample[] = [
+  categories: CategorySection[] = [
     {
-      title: '1. map',
-      description: 'Transforms each value emitted by the source Observable by applying a projection function to each value.',
-      output: [],
-      isRunning: false
+      name: '1. Creation Operators',
+      description: 'Operators that create new Observables from various sources',
+      isExpanded: true,
+      examples: [
+        {
+          title: 'of',
+          description: 'Creates an Observable that emits the values you provide as arguments',
+          output: [],
+          isRunning: false
+        },
+        {
+          title: 'from',
+          description: 'Creates an Observable fromfrom arrays, promises, iterables or other observables',
+          output: [],
+          isRunning: false
+        },
+        {
+          title: 'interval',
+          description: 'Creates an Observable that emits sequential numbers every specified interval',
+          output: [],
+          isRunning: false
+        },
+        {
+          title: 'timer',
+          description: 'Creates an Observable that starts emitting after an initial delay',
+          output: [],
+          isRunning: false
+        }
+      ]
     },
     {
-      title: '2. filter',
-      description: 'Emits only those values from the source Observable that satisfy a specified predicate function.',
-      output: [],
-      isRunning: false
+      name: '2. Pipeable/Transformation Operators',
+      description: 'Operators that transform values emitted by Observables',
+      isExpanded: true,
+      examples: [
+        {
+          title: 'map',
+          description: 'Transforms each value by applying a projection function',
+          output: [],
+          isRunning: false
+        },
+        {
+          title: 'scan',
+          description: 'Applies an accumulator function and returns each intermediate result',
+          output: [],
+          isRunning: false
+        },
+        {
+          title: 'switchMap',
+          description: 'Maps to Observable, cancels previous inner Observable when new one arrives',
+          output: [],
+          isRunning: false
+        },
+        {
+          title: 'mergeMap',
+          description: 'Maps to Observable, merges all inner Observables concurrently',
+          output: [],
+          isRunning: false
+        },
+        {
+          title: 'concatMap',
+          description: 'Maps to Observable, concatenates inner Observables sequentially',
+          output: [],
+          isRunning: false
+        }
+      ]
     },
     {
-      title: '3. take',
-      description: 'Emits only the first n values emitted by the source Observable, then completes.',
-      output: [],
-      isRunning: false
+      name: '3. Combination Operators',
+      description: 'Operators that combine multiple Observables into one',
+      isExpanded: true,
+      examples: [
+        {
+          title: 'merge',
+          description: 'Merges multiple Observables into one by subscribing to all simultaneously',
+          output: [],
+          isRunning: false
+        },
+        {
+          title: 'concat',
+          description: 'Concatenates Observables sequentially - one after another',
+          output: [],
+          isRunning: false
+        },
+        {
+          title: 'combineLatest',
+          description: 'Combines latest values from multiple sources when any source emits',
+          output: [],
+          isRunning: false
+        },
+        {
+          title: 'forkJoin',
+          description: 'Waits for all Observables to complete, then emits last value from each',
+          output: [],
+          isRunning: false
+        },
+        {
+          title: 'zip',
+          description: 'Combines Observables by pairing emissions by index position',
+          output: [],
+          isRunning: false
+        },
+        {
+          title: 'race',
+          description: 'Returns Observable that mirrors first source to emit ("winner takes all")',
+          output: [],
+          isRunning: false
+        }
+      ]
     },
     {
-      title: '4. switchMap',
-      description: 'Maps each value to an Observable, then flattens all inner Observables. Cancels previous inner Observable when a new one arrives.',
-      output: [],
-      isRunning: false
+      name: '4. Filtering Operators',
+      description: 'Operators that selectively emit values based on criteria',
+      isExpanded: true,
+      examples: [
+        {
+          title: 'filter',
+          description: 'Emits only values that satisfy a predicate function',
+          output: [],
+          isRunning: false
+        },
+        {
+          title: 'take',
+          description: 'Emits only the first n values, then completes',
+          output: [],
+          isRunning: false
+        },
+        {
+          title: 'skip',
+          description: 'Skips the first n values emitted by the source',
+          output: [],
+          isRunning: false
+        },
+        {
+          title: 'distinctUntilChanged',
+          description: 'Emits only when current value is different from previous',
+          output: [],
+          isRunning: false
+        },
+        {
+          title: 'debounceTime',
+          description: 'Emits value only after specified time has passed without another emission',
+          output: [],
+          isRunning: false
+        },
+        {
+          title: 'first',
+          description: 'Emits only the first value (or first that meets condition)',
+          output: [],
+          isRunning: false
+        }
+      ]
     },
     {
-      title: '5. mergeMap (flatMap)',
-      description: 'Maps each value to an Observable, then flattens all inner Observables. Does not cancel previous inner Observables.',
-      output: [],
-      isRunning: false
+      name: '5. Error Handling Operators',
+      description: 'Operators for handling and recovering from errors',
+      isExpanded: true,
+      examples: [
+        {
+          title: 'catchError',
+          description: 'Catches errors and provides fallback Observable or value',
+          output: [],
+          isRunning: false
+        },
+        {
+          title: 'retry',
+          description: 'Resubscribes to source Observable when error occurs',
+          output: [],
+          isRunning: false
+        },
+        {
+          title: 'retryWhen',
+          description: 'Retries source Observable based on custom retry logic',
+          output: [],
+          isRunning: false
+        }
+      ]
     },
     {
-      title: '6. concatMap',
-      description: 'Maps each value to an Observable, then flattens all inner Observables in sequence. Waits for each inner Observable to complete before subscribing to the next.',
-      output: [],
-      isRunning: false
+      name: '6. Utility Operators',
+      description: 'Operators for side effects, debugging, and utility functions',
+      isExpanded: true,
+      examples: [
+        {
+          title: 'tap',
+          description: 'Performs side effects without modifying the stream',
+          output: [],
+          isRunning: false
+        },
+        {
+          title: 'finalize',
+          description: 'Executes callback when Observable completes or errors',
+          output: [],
+          isRunning: false
+        },
+        {
+          title: 'delay',
+          description: 'Delays emissions by specified time',
+          output: [],
+          isRunning: false
+        },
+        {
+          title: 'startWith',
+          description: 'Emits specified values before source Observable values',
+          output: [],
+          isRunning: false
+        }
+      ]
     },
     {
-      title: '7. debounceTime',
-      description: 'Emits a value only after a particular time span has passed without another source emission.',
-      output: [],
-      isRunning: false
+      name: '7. Multicasting Operators',
+      description: 'Operators for sharing Observable execution among multiple subscribers',
+      isExpanded: true,
+      examples: [
+        {
+          title: 'share',
+          description: 'Shares source Observable among multiple subscribers',
+          output: [],
+          isRunning: false
+        },
+        {
+          title: 'shareReplay',
+          description: 'Shares source and replays specified number of emissions to late subscribers',
+          output: [],
+          isRunning: false
+        },
+        {
+          title: 'publish',
+          description: 'Returns ConnectableObservable that shares single subscription to source',
+          output: [],
+          isRunning: false
+        }
+      ]
     },
     {
-      title: '8. distinctUntilChanged',
-      description: 'Emits all items emitted by the source Observable that are distinct by comparison from the previous item.',
-      output: [],
-      isRunning: false
+      name: '8. Conditional and Boolean Operators',
+      description: 'Operators that evaluate conditions or return boolean results',
+      isExpanded: true,
+      examples: [
+        {
+          title: 'every',
+          description: 'Returns Observable that emits whether every value satisfies condition',
+          output: [],
+          isRunning: false
+        },
+        {
+          title: 'find',
+          description: 'Emits first value that satisfies condition, then completes',
+          output: [],
+          isRunning: false
+        },
+        {
+          title: 'isEmpty',
+          description: 'Emits true if source completes without emitting, false otherwise',
+          output: [],
+          isRunning: false
+        }
+      ]
     },
     {
-      title: '9. catchError',
-      description: 'Catches errors on the Observable to be handled by returning a new Observable or throwing an error.',
-      output: [],
-      isRunning: false
-    },
-    {
-      title: '10. tap (do)',
-      description: 'Performs a side effect for every emission on the source Observable, but returns an Observable that is identical to the source.',
-      output: [],
-      isRunning: false
-    },
-    {
-      title: '11. scan',
-      description: 'Applies an accumulator function over the source Observable and returns each intermediate result.',
-      output: [],
-      isRunning: false
-    },
-    {
-      title: '12. startWith',
-      description: 'Returns an Observable that emits specified items before it begins to emit items from the source Observable.',
-      output: [],
-      isRunning: false
-    },
-    {
-      title: '13. forkJoin',
-      description: 'Waits for all source Observables to complete, then emits the last value from each. Perfect for parallel HTTP requests.',
-      output: [],
-      isRunning: false
-    },
-    {
-      title: '14. combineLatest',
-      description: 'Combines multiple Observables and emits whenever any source emits, using the latest value from each source.',
-      output: [],
-      isRunning: false
-    },
-    {
-      title: '15. merge',
-      description: 'Merges multiple Observables into one by subscribing to all sources simultaneously and emitting values as they arrive.',
-      output: [],
-      isRunning: false
-    },
-    {
-      title: '16. concat',
-      description: 'Concatenates multiple Observables sequentially - subscribes to the next Observable only after the previous one completes.',
-      output: [],
-      isRunning: false
-    },
-    {
-      title: '17. zip',
-      description: 'Combines multiple Observables by pairing emissions by index - waits for all sources to emit before emitting the combined result.',
-      output: [],
-      isRunning: false
-    },
-    {
-      title: '18. race',
-      description: 'Returns an Observable that mirrors the first source Observable to emit a value. The "winner takes all" operator.',
-      output: [],
-      isRunning: false
+      name: '9. Subject Methods',
+      description: 'Methods and behaviors of different Subject types',
+      isExpanded: true,
+      examples: [
+        {
+          title: 'Subject',
+          description: 'Basic Subject - multicast observable that allows multiple subscribers',
+          output: [],
+          isRunning: false
+        },
+        {
+          title: 'BehaviorSubject',
+          description: 'Subject that stores current value and emits it to new subscribers',
+          output: [],
+          isRunning: false
+        },
+        {
+          title: 'ReplaySubject',
+          description: 'Subject that replays specified number of previous values to new subscribers',
+          output: [],
+          isRunning: false
+        }
+      ]
     }
   ];
 
@@ -174,363 +376,305 @@ export class RxjsOperatorsComponent implements OnInit, OnDestroy {
     this.stopAllExamples();
   }
 
-  runExample(index: number) {
-    if (this.examples[index].isRunning) {
-      this.stopExample(index);
+  toggleCategory(categoryIndex: number) {
+    this.categories[categoryIndex].isExpanded = !this.categories[categoryIndex].isExpanded;
+  }
+
+  runExample(categoryIndex: number, exampleIndex: number) {
+    const example = this.categories[categoryIndex].examples[exampleIndex];
+    
+    if (example.isRunning) {
+      this.stopExample(categoryIndex, exampleIndex);
       return;
     }
 
-    this.examples[index].output = [];
-    this.examples[index].isRunning = true;
+    example.output = [];
+    example.isRunning = true;
 
     let subscription: Subscription | undefined;
+    const operatorKey = `${categoryIndex}-${exampleIndex}`;
 
-    switch (index) {
-      case 0: // map
-        subscription = of(1, 2, 3, 4, 5)
-          .pipe(
-            map(x => x * 2),
-            tap(value => this.addOutput(index, `Mapped: ${value}`))
-          )
-          .subscribe({
-            complete: () => {
-              this.addOutput(index, 'Completed!');
-              this.examples[index].isRunning = false;
-            }
-          });
-        break;
-
-      case 1: // filter
-        subscription = of(1, 2, 3, 4, 5, 6, 7, 8, 9, 10)
-          .pipe(
-            filter(x => x % 2 === 0),
-            tap(value => this.addOutput(index, `Even number: ${value}`))
-          )
-          .subscribe({
-            complete: () => {
-              this.addOutput(index, 'Completed!');
-              this.examples[index].isRunning = false;
-            }
-          });
-        break;
-
-      case 2: // take
-        subscription = interval(1000)
-          .pipe(
-            take(5),
-            tap(value => this.addOutput(index, `Value: ${value}`))
-          )
-          .subscribe({
-            complete: () => {
-              this.addOutput(index, 'Completed after 5 emissions!');
-              this.examples[index].isRunning = false;
-            }
-          });
-        break;
-
-      case 3: // switchMap
-        const searchTerms = of('a', 'ab', 'abc');
-        subscription = searchTerms
-          .pipe(
-            switchMap(term => {
-              this.addOutput(index, `Searching for: ${term}`);
-              return timer(1000).pipe(
-                map(() => `Results for "${term}": [${term}1, ${term}2, ${term}3]`)
-              );
-            }),
-            tap(result => this.addOutput(index, result))
-          )
-          .subscribe({
-            complete: () => {
-              this.addOutput(index, 'Search completed!');
-              this.examples[index].isRunning = false;
-            }
-          });
-        break;
-
-      case 4: // mergeMap
-        subscription = of('A', 'B', 'C')
-          .pipe(
-            mergeMap(letter => 
-              interval(500).pipe(
-                take(3),
-                map(i => `${letter}${i + 1}`)
-              )
-            ),
-            tap(value => this.addOutput(index, `Merged: ${value}`))
-          )
-          .subscribe({
-            complete: () => {
-              this.addOutput(index, 'All merged streams completed!');
-              this.examples[index].isRunning = false;
-            }
-          });
-        break;
-
-      case 5: // concatMap
-        subscription = of('X', 'Y', 'Z')
-          .pipe(
-            concatMap(letter => 
-              interval(500).pipe(
-                take(2),
-                map(i => `${letter}${i + 1}`)
-              )
-            ),
-            tap(value => this.addOutput(index, `Concatenated: ${value}`))
-          )
-          .subscribe({
-            complete: () => {
-              this.addOutput(index, 'All concatenated streams completed!');
-              this.examples[index].isRunning = false;
-            }
-          });
-        break;
-
-      case 6: // debounceTime
-        const rapidEmissions = new Subject<string>();
-        subscription = rapidEmissions
-          .pipe(
-            debounceTime(1000),
-            tap(value => this.addOutput(index, `Debounced: ${value}`))
-          )
-          .subscribe();
-
-        // Simulate rapid emissions
-        const emissions = ['a', 'ab', 'abc', 'abcd'];
-        emissions.forEach((emission, i) => {
-          setTimeout(() => {
-            this.addOutput(index, `Emitting: ${emission}`);
-            rapidEmissions.next(emission);
-            if (i === emissions.length - 1) {
-              setTimeout(() => {
-                rapidEmissions.complete();
-                this.addOutput(index, 'Completed!');
-                this.examples[index].isRunning = false;
-              }, 1500);
-            }
-          }, i * 300);
-        });
-        break;
-
-      case 7: // distinctUntilChanged
-        subscription = of(1, 1, 2, 2, 2, 3, 3, 4, 4, 4, 4, 5)
-          .pipe(
-            distinctUntilChanged(),
-            tap(value => this.addOutput(index, `Distinct: ${value}`))
-          )
-          .subscribe({
-            complete: () => {
-              this.addOutput(index, 'Completed!');
-              this.examples[index].isRunning = false;
-            }
-          });
-        break;
-
-      case 8: // catchError
-        subscription = of(1, 2, 3, 4, 5)
-          .pipe(
-            map(x => {
-              if (x === 3) {
-                throw new Error(`Error at value ${x}`);
-              }
-              return x * 2;
-            }),
-            catchError(error => {
-              this.addOutput(index, `Caught error: ${error.message}`);
-              return of(999); // Fallback value
-            }),
-            tap(value => this.addOutput(index, `Result: ${value}`))
-          )
-          .subscribe({
-            complete: () => {
-              this.addOutput(index, 'Completed with error handling!');
-              this.examples[index].isRunning = false;
-            }
-          });
-        break;
-
-      case 9: // tap
-        subscription = of(1, 2, 3, 4, 5)
-          .pipe(
-            tap(value => this.addOutput(index, `Side effect: Processing ${value}`)),
-            map(x => x * x),
-            tap(value => this.addOutput(index, `After map: ${value}`))
-          )
-          .subscribe({
-            complete: () => {
-              this.addOutput(index, 'Completed!');
-              this.examples[index].isRunning = false;
-            }
-          });
-        break;
-
-      case 10: // scan
-        subscription = of(1, 2, 3, 4, 5)
-          .pipe(
-            scan((acc, value) => acc + value, 0),
-            tap(runningTotal => this.addOutput(index, `Running total: ${runningTotal}`))
-          )
-          .subscribe({
-            complete: () => {
-              this.addOutput(index, 'Completed!');
-              this.examples[index].isRunning = false;
-            }
-          });
-        break;
-
-      case 11: // startWith
-        subscription = of('World', '!').pipe(
-          startWith('Hello', ' '),
-          tap(value => this.addOutput(index, `Value: "${value}"`))
-        ).subscribe({
-          complete: () => {
-            this.addOutput(index, 'Completed!');
-            this.examples[index].isRunning = false;
-          }
-        });
-        break;
-
-      case 12: // forkJoin
-        const request1 = timer(1000).pipe(map(() => 'API Response 1'));
-        const request2 = timer(1500).pipe(map(() => 'API Response 2'));
-        const request3 = timer(800).pipe(map(() => 'API Response 3'));
-        
-        this.addOutput(index, 'Starting parallel requests...');
-        subscription = forkJoin({
-          first: request1,
-          second: request2,
-          third: request3
-        }).pipe(
-          tap(results => {
-            this.addOutput(index, `All requests completed:`);
-            this.addOutput(index, `  first: ${results.first}`);
-            this.addOutput(index, `  second: ${results.second}`);
-            this.addOutput(index, `  third: ${results.third}`);
-          })
-        ).subscribe({
-          complete: () => {
-            this.addOutput(index, 'forkJoin completed!');
-            this.examples[index].isRunning = false;
-          }
-        });
-        break;
-
-      case 13: // combineLatest
-        const stream1 = interval(1000).pipe(take(4), map(i => `A${i + 1}`));
-        const stream2 = interval(1500).pipe(take(3), map(i => `B${i + 1}`));
-        
-        subscription = combineLatest([stream1, stream2]).pipe(
-          tap(([valueA, valueB]) => {
-            this.addOutput(index, `Combined: [${valueA}, ${valueB}]`);
-          })
-        ).subscribe({
-          complete: () => {
-            this.addOutput(index, 'combineLatest completed!');
-            this.examples[index].isRunning = false;
-          }
-        });
-        break;
-
-      case 14: // merge
-        const fast$ = interval(800).pipe(take(5), map(i => `Fast-${i + 1}`));
-        const slow$ = interval(1200).pipe(take(3), map(i => `Slow-${i + 1}`));
-        
-        subscription = merge(fast$, slow$).pipe(
-          tap(value => this.addOutput(index, `Merged: ${value}`))
-        ).subscribe({
-          complete: () => {
-            this.addOutput(index, 'merge completed!');
-            this.examples[index].isRunning = false;
-          }
-        });
-        break;
-
-      case 15: // concat
-        const first$ = of('First', 'Sequence').pipe(
-          concatMap(val => timer(500).pipe(map(() => val)))
-        );
-        const second$ = of('Second', 'Sequence').pipe(
-          concatMap(val => timer(300).pipe(map(() => val)))
-        );
-        
-        subscription = concat(first$, second$).pipe(
-          tap(value => this.addOutput(index, `Concatenated: ${value}`))
-        ).subscribe({
-          complete: () => {
-            this.addOutput(index, 'concat completed!');
-            this.examples[index].isRunning = false;
-          }
-        });
-        break;
-
-      case 16: // zip
-        const numbers$ = of(1, 2, 3, 4);
-        const letters$ = of('A', 'B', 'C');
-        const symbols$ = of('!', '@', '#', '$', '%');
-        
-        subscription = zip(numbers$, letters$, symbols$).pipe(
-          tap(([num, letter, symbol]) => {
-            this.addOutput(index, `Zipped: ${num}${letter}${symbol}`);
-          })
-        ).subscribe({
-          complete: () => {
-            this.addOutput(index, 'zip completed!');
-            this.examples[index].isRunning = false;
-          }
-        });
-        break;
-
-      case 17: // race
-        const rabbit$ = timer(800).pipe(map(() => '🐰 Rabbit wins!'));
-        const turtle$ = timer(1500).pipe(map(() => '🐢 Turtle wins!'));
-        const cheetah$ = timer(400).pipe(map(() => '🐆 Cheetah wins!'));
-        
-        this.addOutput(index, 'Race started! 🏁');
-        subscription = race(rabbit$, turtle$, cheetah$).pipe(
-          tap(winner => this.addOutput(index, winner))
-        ).subscribe({
-          complete: () => {
-            this.addOutput(index, 'Race finished!');
-            this.examples[index].isRunning = false;
-          }
-        });
-        break;
-    }
+    subscription = this.getOperatorObservable(categoryIndex, exampleIndex)?.subscribe({
+      next: (value) => this.addOutput(categoryIndex, exampleIndex, `Next: ${JSON.stringify(value)}`),
+      error: (error) => {
+        this.addOutput(categoryIndex, exampleIndex, `Error: ${error.message}`);
+        example.isRunning = false;
+      },
+      complete: () => {
+        this.addOutput(categoryIndex, exampleIndex, 'Completed!');
+        example.isRunning = false;
+      }
+    });
 
     if (subscription) {
-      this.examples[index].subscription = subscription;
+      example.subscription = subscription;
       this.subscriptions.push(subscription);
     }
   }
 
-  stopExample(index: number) {
-    if (this.examples[index].subscription) {
-      this.examples[index].subscription!.unsubscribe();
-      this.examples[index].subscription = undefined;
+  private getOperatorObservable(categoryIndex: number, exampleIndex: number): Observable<any> | undefined {
+    const key = `${categoryIndex}-${exampleIndex}`;
+    
+    switch (key) {
+      // Creation Operators (Category 0)
+      case '0-0': // of
+        return of(1, 2, 3, 4, 5);
+      
+      case '0-1': // from
+        return from([10, 20, 30, 40]);
+      
+      case '0-2': // interval
+        return interval(1000).pipe(take(5));
+      
+      case '0-3': // timer
+        return timer(1000, 500).pipe(take(4));
+
+      // Pipeable/Transformation Operators (Category 1)
+      case '1-0': // map
+        return of(1, 2, 3, 4, 5).pipe(map(x => x * 2));
+      
+      case '1-1': // scan
+        return of(1, 2, 3, 4, 5).pipe(scan((acc, value) => acc + value, 0));
+      
+      case '1-2': // switchMap
+        return of('a', 'ab', 'abc').pipe(
+          switchMap(term => timer(1000).pipe(map(() => `Results for "${term}"`)))
+        );
+      
+      case '1-3': // mergeMap
+        return of('A', 'B', 'C').pipe(
+          mergeMap(letter => interval(500).pipe(take(2), map(i => `${letter}${i + 1}`)))
+        );
+      
+      case '1-4': // concatMap
+        return of('X', 'Y').pipe(
+          concatMap(letter => timer(500).pipe(map(() => `${letter}-processed`)))
+        );
+
+      // Combination Operators (Category 2)
+      case '2-0': // merge
+        return merge(
+          interval(800).pipe(take(3), map(i => `Fast-${i + 1}`)),
+          interval(1200).pipe(take(2), map(i => `Slow-${i + 1}`))
+        );
+      
+      case '2-1': // concat
+        return concat(
+          of('First').pipe(delay(500)),
+          of('Second').pipe(delay(300))
+        );
+      
+      case '2-2': // combineLatest
+        return combineLatest([
+          interval(1000).pipe(take(3), map(i => `A${i + 1}`)),
+          interval(1500).pipe(take(2), map(i => `B${i + 1}`))
+        ]);
+      
+      case '2-3': // forkJoin
+        return forkJoin({
+          first: timer(1000).pipe(map(() => 'Response 1')),
+          second: timer(1500).pipe(map(() => 'Response 2')),
+          third: timer(800).pipe(map(() => 'Response 3'))
+        });
+      
+      case '2-4': // zip
+        return zip(
+          of(1, 2, 3),
+          of('A', 'B', 'C'),
+          of('!', '@', '#')
+        );
+      
+      case '2-5': // race
+        return race(
+          timer(800).pipe(map(() => '🐰 Rabbit')),
+          timer(1500).pipe(map(() => '🐢 Turtle')),
+          timer(400).pipe(map(() => '🐆 Cheetah'))
+        );
+
+      // Filtering Operators (Category 3)
+      case '3-0': // filter
+        return of(1, 2, 3, 4, 5, 6, 7, 8, 9, 10).pipe(filter(x => x % 2 === 0));
+      
+      case '3-1': // take
+        return interval(1000).pipe(take(4));
+      
+      case '3-2': // skip
+        return of(1, 2, 3, 4, 5, 6).pipe(skip(3));
+      
+      case '3-3': // distinctUntilChanged
+        return of(1, 1, 2, 2, 2, 3, 3, 4, 4, 5).pipe(distinctUntilChanged());
+      
+      case '3-4': // debounceTime
+        const rapidSource = new Subject<string>();
+        setTimeout(() => rapidSource.next('a'), 100);
+        setTimeout(() => rapidSource.next('ab'), 400);
+        setTimeout(() => rapidSource.next('abc'), 700);
+        setTimeout(() => rapidSource.next('abcd'), 1000);
+        setTimeout(() => rapidSource.complete(), 2500);
+        return rapidSource.pipe(debounceTime(1000));
+      
+      case '3-5': // first
+        return of(10, 20, 30, 40, 50).pipe(first(x => x > 25));
+
+      // Error Handling Operators (Category 4)
+      case '4-0': // catchError
+        return of(1, 2, 3, 4, 5).pipe(
+          map(x => {
+            if (x === 3) throw new Error(`Error at ${x}`);
+            return x * 2;
+          }),
+          catchError(error => {
+            this.addOutput(4, 0, `Caught: ${error.message}`);
+            return of(999);
+          })
+        );
+      
+      case '4-1': // retry
+        let attempt = 0;
+        return defer(() => {
+          attempt++;
+          this.addOutput(4, 1, `Attempt ${attempt}`);
+          if (attempt < 3) {
+            return throwError(() => new Error(`Failed attempt ${attempt}`));
+          }
+          return of(`Success on attempt ${attempt}`);
+        }).pipe(retry(2));
+      
+      case '4-2': // retryWhen
+        let retryAttempt = 0;
+        return defer(() => {
+          retryAttempt++;
+          this.addOutput(4, 2, `Retry attempt ${retryAttempt}`);
+          if (retryAttempt < 3) {
+            return throwError(() => new Error(`Retry failed ${retryAttempt}`));
+          }
+          return of(`Success after ${retryAttempt} attempts`);
+        }).pipe(retryWhen(errors => errors.pipe(delay(1000), take(2))));
+
+      // Utility Operators (Category 5)
+      case '5-0': // tap
+        return of(1, 2, 3, 4, 5).pipe(
+          tap(value => this.addOutput(5, 0, `Side effect: Processing ${value}`)),
+          map(x => x * x)
+        );
+      
+      case '5-1': // finalize
+        return of(1, 2, 3).pipe(
+          finalize(() => this.addOutput(5, 1, 'Finalize: Cleanup executed'))
+        );
+      
+      case '5-2': // delay
+        return of('Delayed', 'Messages').pipe(delay(1000));
+      
+      case '5-3': // startWith
+        return of('World', '!').pipe(startWith('Hello', ' '));
+
+      // Multicasting Operators (Category 6)
+      case '6-0': // share
+        const sharedSource = interval(1000).pipe(take(3), share());
+        // Simulate multiple subscribers
+        setTimeout(() => {
+          sharedSource.subscribe(x => this.addOutput(6, 0, `Subscriber 1: ${x}`));
+        }, 0);
+        setTimeout(() => {
+          sharedSource.subscribe(x => this.addOutput(6, 0, `Subscriber 2: ${x}`));
+        }, 1500);
+        return sharedSource;
+      
+      case '6-1': // shareReplay
+        const replaySource = interval(1000).pipe(take(3), shareReplay(2));
+        setTimeout(() => {
+          replaySource.subscribe(x => this.addOutput(6, 1, `Early Sub: ${x}`));
+        }, 0);
+        setTimeout(() => {
+          replaySource.subscribe(x => this.addOutput(6, 1, `Late Sub: ${x}`));
+        }, 2500);
+        return replaySource;
+      
+      case '6-2': // publish
+        const publishSource = interval(1000).pipe(take(3), publish()) as any;
+        setTimeout(() => {
+          this.addOutput(6, 2, 'Connecting to published source...');
+          publishSource.connect();
+        }, 500);
+        return publishSource;
+
+      // Conditional and Boolean Operators (Category 7)
+      case '7-0': // every
+        return of(2, 4, 6, 8).pipe(every(x => x % 2 === 0));
+      
+      case '7-1': // find
+        return of(1, 3, 5, 8, 9).pipe(find(x => x % 2 === 0));
+      
+      case '7-2': // isEmpty
+        return EMPTY.pipe(isEmpty());
+
+      // Subject Methods (Category 8)
+      case '8-0': // Subject
+        const subject = new Subject<number>();
+        setTimeout(() => {
+          subject.next(1);
+          subject.next(2);
+          subject.next(3);
+          subject.complete();
+        }, 100);
+        return subject;
+      
+      case '8-1': // BehaviorSubject
+        const behaviorSubject = new BehaviorSubject<string>('Initial Value');
+        setTimeout(() => behaviorSubject.next('Updated Value 1'), 1000);
+        setTimeout(() => behaviorSubject.next('Updated Value 2'), 2000);
+        setTimeout(() => behaviorSubject.complete(), 3000);
+        return behaviorSubject;
+      
+      case '8-2': // ReplaySubject
+        const replaySubject = new ReplaySubject<string>(2);
+        replaySubject.next('Value 1');
+        replaySubject.next('Value 2');
+        replaySubject.next('Value 3');
+        setTimeout(() => {
+          this.addOutput(8, 2, 'New subscriber will receive last 2 values');
+          replaySubject.subscribe(x => this.addOutput(8, 2, `Late subscriber: ${x}`));
+        }, 1000);
+        return replaySubject;
+
+      default:
+        return of('No implementation yet');
     }
-    this.examples[index].isRunning = false;
-    this.addOutput(index, 'Stopped by user');
+  }
+
+  stopExample(categoryIndex: number, exampleIndex: number) {
+    const example = this.categories[categoryIndex].examples[exampleIndex];
+    if (example.subscription) {
+      example.subscription.unsubscribe();
+      example.subscription = undefined;
+    }
+    example.isRunning = false;
+    this.addOutput(categoryIndex, exampleIndex, 'Stopped by user');
   }
 
   stopAllExamples() {
     this.subscriptions.forEach(sub => sub.unsubscribe());
     this.subscriptions = [];
-    this.examples.forEach(example => {
-      example.isRunning = false;
-      example.subscription = undefined;
+    this.categories.forEach(category => {
+      category.examples.forEach(example => {
+        example.isRunning = false;
+        example.subscription = undefined;
+      });
     });
   }
 
-  clearOutput(index: number) {
-    this.examples[index].output = [];
+  clearOutput(categoryIndex: number, exampleIndex: number) {
+    this.categories[categoryIndex].examples[exampleIndex].output = [];
   }
 
-  private addOutput(index: number, message: string) {
-    this.examples[index].output.push(`${new Date().toLocaleTimeString()}: ${message}`);
+  private addOutput(categoryIndex: number, exampleIndex: number, message: string) {
+    const example = this.categories[categoryIndex].examples[exampleIndex];
+    example.output.push(`${new Date().toLocaleTimeString()}: ${message}`);
     
     // Keep only last 10 messages to prevent overflow
-    if (this.examples[index].output.length > 10) {
-      this.examples[index].output = this.examples[index].output.slice(-10);
+    if (example.output.length > 10) {
+      example.output = example.output.slice(-10);
     }
   }
 }

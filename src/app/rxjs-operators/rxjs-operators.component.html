@@ -1,91 +1,117 @@
 <div class="operators-container">
-  <h1>RxJS Operators Playground</h1>
+  <h1>RxJS Operators Playground - Categorized</h1>
   <p class="intro">
-    Explore 18 of the most commonly used RxJS operators and combining functions with interactive examples. 
-    Click "Run Example" to see each operator in action!
+    Explore RxJS operators organized by category. Each category demonstrates different types of operators
+    with interactive examples. Click category headers to expand/collapse sections.
   </p>
 
   <div class="controls">
     <button class="btn btn-danger" (click)="stopAllExamples()">Stop All Examples</button>
   </div>
 
-  <div class="examples-grid">
-    <div class="example-card" *ngFor="let example of examples; let i = index">
-      <div class="example-header">
-        <h3>{{ example.title }}</h3>
-        <div class="example-controls">
-          <button 
-            class="btn" 
-            [class.btn-success]="!example.isRunning"
-            [class.btn-warning]="example.isRunning"
-            (click)="runExample(i)">
-            {{ example.isRunning ? 'Stop' : 'Run Example' }}
-          </button>
-          <button class="btn btn-secondary" (click)="clearOutput(i)">Clear</button>
-        </div>
-      </div>
-      
-      <div class="example-description">
-        <p>{{ example.description }}</p>
+  <div class="categories-container">
+    <div class="category-section" *ngFor="let category of categories; let categoryIndex = index">
+      <div class="category-header" (click)="toggleCategory(categoryIndex)">
+        <h2>
+          <span class="toggle-icon" [class.expanded]="category.isExpanded">▶</span>
+          {{ category.name }}
+        </h2>
+        <p class="category-description">{{ category.description }}</p>
       </div>
 
-      <div class="example-output">
-        <h4>Output:</h4>
-        <div class="output-console" [class.running]="example.isRunning">
-          <div *ngIf="example.output.length === 0" class="no-output">
-            No output yet. Click "Run Example" to see the operator in action.
-          </div>
-          <div class="output-line" *ngFor="let line of example.output">
-            {{ line }}
+      <div class="category-content" [class.expanded]="category.isExpanded">
+        <div class="examples-grid">
+          <div class="example-card" *ngFor="let example of category.examples; let exampleIndex = index">
+            <div class="example-header">
+              <h3>{{ example.title }}</h3>
+              <div class="example-controls">
+                <button 
+                  class="btn" 
+                  [class.btn-success]="!example.isRunning"
+                  [class.btn-warning]="example.isRunning"
+                  (click)="runExample(categoryIndex, exampleIndex)">
+                  {{ example.isRunning ? 'Stop' : 'Run' }}
+                </button>
+                <button class="btn btn-secondary" (click)="clearOutput(categoryIndex, exampleIndex)">Clear</button>
+              </div>
+            </div>
+            
+            <div class="example-description">
+              <p>{{ example.description }}</p>
+            </div>
+
+            <div class="example-output">
+              <h4>Output:</h4>
+              <div class="output-console" [class.running]="example.isRunning">
+                <div *ngIf="example.output.length === 0" class="no-output">
+                  No output yet. Click "Run" to see the operator in action.
+                </div>
+                <div class="output-line" *ngFor="let line of example.output">
+                  {{ line }}
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       </div>
     </div>
   </div>
 
-  <div class="operator-categories">
-    <h2>Operator Categories</h2>
-    <div class="categories-grid">
-      <div class="category">
-        <h4>Transformation</h4>
-        <ul>
-          <li>map - Transform values</li>
-          <li>switchMap - Switch to new Observable</li>
-          <li>mergeMap - Merge multiple Observables</li>
-          <li>concatMap - Concatenate Observables</li>
-          <li>scan - Accumulate values</li>
-        </ul>
+  <div class="operator-summary">
+    <h2>RxJS Operator Categories Overview</h2>
+    <div class="summary-grid">
+      <div class="summary-card">
+        <h4>🏗️ Creation Operators</h4>
+        <p>Create Observables from various sources</p>
+        <code>of, from, interval, timer, fromEvent</code>
       </div>
       
-      <div class="category">
-        <h4>Filtering</h4>
-        <ul>
-          <li>filter - Filter values by condition</li>
-          <li>take - Take first n values</li>
-          <li>distinctUntilChanged - Remove duplicates</li>
-          <li>debounceTime - Debounce emissions</li>
-        </ul>
+      <div class="summary-card">
+        <h4>🔄 Pipeable/Transformation</h4>
+        <p>Transform values within Observable streams</p>
+        <code>map, scan, switchMap, mergeMap, concatMap</code>
       </div>
       
-      <div class="category">
-        <h4>Utility</h4>
-        <ul>
-          <li>tap - Side effects</li>
-          <li>startWith - Start with initial values</li>
-          <li>catchError - Error handling</li>
-        </ul>
+      <div class="summary-card">
+        <h4>🤝 Combination Operators</h4>
+        <p>Combine multiple Observables into one</p>
+        <code>merge, concat, combineLatest, forkJoin, zip, race</code>
       </div>
-
-      <div class="category">
-        <h4>Combining</h4>
-        <ul>
-          <li>forkJoin - Wait for all to complete</li>
-          <li>combineLatest - Latest from each source</li>
-          <li>merge - Merge all emissions</li>
-          <li>concat - Sequential concatenation</li>
-          <li>zip - Pair by index</li>
-          <li>race - First to emit wins</li>
-        </ul>
+      
+      <div class="summary-card">
+        <h4>🔍 Filtering Operators</h4>
+        <p>Selectively emit values based on criteria</p>
+        <code>filter, take, skip, distinctUntilChanged, debounceTime</code>
+      </div>
+      
+      <div class="summary-card">
+        <h4>🚨 Error Handling</h4>
+        <p>Handle and recover from errors</p>
+        <code>catchError, retry, retryWhen</code>
+      </div>
+      
+      <div class="summary-card">
+        <h4>🔧 Utility Operators</h4>
+        <p>Side effects, debugging, and utilities</p>
+        <code>tap, finalize, delay, startWith</code>
+      </div>
+      
+      <div class="summary-card">
+        <h4>📡 Multicasting</h4>
+        <p>Share Observable execution among subscribers</p>
+        <code>share, shareReplay, publish, multicast</code>
+      </div>
+      
+      <div class="summary-card">
+        <h4>❓ Conditional/Boolean</h4>
+        <p>Evaluate conditions and return boolean results</p>
+        <code>every, find, isEmpty</code>
+      </div>
+      
+      <div class="summary-card">
+        <h4>📮 Subject Methods</h4>
+        <p>Different Subject types and their behaviors</p>
+        <code>Subject, BehaviorSubject, ReplaySubject</code>
       </div>
     </div>
   </div>
