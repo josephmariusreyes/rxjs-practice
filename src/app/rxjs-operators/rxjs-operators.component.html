@@ -1,1 +1,92 @@
-<p>rxjs-operators works!</p>
+<div class="operators-container">
+  <h1>RxJS Operators Playground</h1>
+  <p class="intro">
+    Explore 18 of the most commonly used RxJS operators and combining functions with interactive examples. 
+    Click "Run Example" to see each operator in action!
+  </p>
+
+  <div class="controls">
+    <button class="btn btn-danger" (click)="stopAllExamples()">Stop All Examples</button>
+  </div>
+
+  <div class="examples-grid">
+    <div class="example-card" *ngFor="let example of examples; let i = index">
+      <div class="example-header">
+        <h3>{{ example.title }}</h3>
+        <div class="example-controls">
+          <button 
+            class="btn" 
+            [class.btn-success]="!example.isRunning"
+            [class.btn-warning]="example.isRunning"
+            (click)="runExample(i)">
+            {{ example.isRunning ? 'Stop' : 'Run Example' }}
+          </button>
+          <button class="btn btn-secondary" (click)="clearOutput(i)">Clear</button>
+        </div>
+      </div>
+      
+      <div class="example-description">
+        <p>{{ example.description }}</p>
+      </div>
+
+      <div class="example-output">
+        <h4>Output:</h4>
+        <div class="output-console" [class.running]="example.isRunning">
+          <div *ngIf="example.output.length === 0" class="no-output">
+            No output yet. Click "Run Example" to see the operator in action.
+          </div>
+          <div class="output-line" *ngFor="let line of example.output">
+            {{ line }}
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="operator-categories">
+    <h2>Operator Categories</h2>
+    <div class="categories-grid">
+      <div class="category">
+        <h4>Transformation</h4>
+        <ul>
+          <li>map - Transform values</li>
+          <li>switchMap - Switch to new Observable</li>
+          <li>mergeMap - Merge multiple Observables</li>
+          <li>concatMap - Concatenate Observables</li>
+          <li>scan - Accumulate values</li>
+        </ul>
+      </div>
+      
+      <div class="category">
+        <h4>Filtering</h4>
+        <ul>
+          <li>filter - Filter values by condition</li>
+          <li>take - Take first n values</li>
+          <li>distinctUntilChanged - Remove duplicates</li>
+          <li>debounceTime - Debounce emissions</li>
+        </ul>
+      </div>
+      
+      <div class="category">
+        <h4>Utility</h4>
+        <ul>
+          <li>tap - Side effects</li>
+          <li>startWith - Start with initial values</li>
+          <li>catchError - Error handling</li>
+        </ul>
+      </div>
+
+      <div class="category">
+        <h4>Combining</h4>
+        <ul>
+          <li>forkJoin - Wait for all to complete</li>
+          <li>combineLatest - Latest from each source</li>
+          <li>merge - Merge all emissions</li>
+          <li>concat - Sequential concatenation</li>
+          <li>zip - Pair by index</li>
+          <li>race - First to emit wins</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</div>
